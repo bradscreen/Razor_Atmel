@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
-File: leds.c                                                                
+File: leds.c
 
 Description:
 LED driver that provides on, off, toggle, blink and PWM functionality.
@@ -9,14 +9,14 @@ regular 1ms calls to LedUpdate().
 
 ------------------------------------------------------------------------------------------------------------------------
 API:
-LedNumberType: 
+LedNumberType:
   EIE1     - WHITE, PURPLE, BLUE, CYAN, GREEN, YELLOW, ORANGE, RED, LCD_RED, LCD_GREEN, LCD_BLUE
   MPGL2_R01 - BLUE, GREEN, YELLOW, RED, LCD_BL
   MPGL2     - BLUE0, BLUE1, BLUE2, BLUE3, GREEN0, GREEN1, GREEN2, GREEN3, RED0, RED1, RED2, RED3, LCD_BL
 
-LedRateType: LED_0_5HZ, LED_1HZ, LED_2HZ, LED_4HZ, LED_8HZ, 
+LedRateType: LED_0_5HZ, LED_1HZ, LED_2HZ, LED_4HZ, LED_8HZ,
              LED_PWM_0, LED_PWM_5, ..., LED_PWM_100
-*Note that PWM values in LedRateType are continuous, thus stepping a variable of LedRateType by one will select the next 
+*Note that PWM values in LedRateType are continuous, thus stepping a variable of LedRateType by one will select the next
 PWM level. However, decrementing past LED_PWM_0 or incrementing past LED_PWM_100 is undefined.
 
 
@@ -83,9 +83,9 @@ static u32 Led_au32BitPositions[] = {PB_13_LED_WHT, PB_14_LED_PRP, PB_18_LED_BLU
                                      PB_19_LED_GRN, PB_17_LED_YLW, PB_15_LED_ORG, PB_20_LED_RED,
                                      PB_10_LCD_BL_RED, PB_11_LCD_BL_GRN, PB_12_LCD_BL_BLU};
 
-/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields: 
+/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields:
      eMode         eRate      u16Count       eCurrentDuty     eActiveState     ePort      LedNumberType */
-static LedConfigType Leds_asLedArray[TOTAL_LEDS] = 
+static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
 {{LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* WHITE      */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* PURPLE     */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* BLUE       */
@@ -97,7 +97,7 @@ static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* LCD_RED    */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* LCD_GREEN  */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}  /* LCD_BLUE   */
-};   
+};
 #endif /* EIE1 */
 
 #ifdef MPGL2
@@ -106,15 +106,15 @@ static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
 /* LED locations: order must correspond to the order set in LedNumberType in the header file. */
 static u32 Led_au32BitPositions[] = {PB_18_LED_BLU, PB_19_LED_GRN, PB_17_LED_YLW, PB_20_LED_RED, PB_11_LCD_BL};
 
-/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields: 
+/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields:
      eMode         eRate      u16Count       eCurrentDuty     eActiveState     ePort      LedNumberType */
-static LedConfigType Leds_asLedArray[TOTAL_LEDS] = 
+static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
 {{LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* BLUE       */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* GREEN      */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* YELLOW     */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* RED        */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* LCD_BL     */
-};   
+};
 #else
 /* LED locations: order must correspond to the order set in LedNumberType in the header file. */
 static u32 Led_au32BitPositions[] = {PB_20_LED0_RED, PB_17_LED1_RED, PB_19_LED2_RED, PB_18_LED3_RED,
@@ -122,9 +122,9 @@ static u32 Led_au32BitPositions[] = {PB_20_LED0_RED, PB_17_LED1_RED, PB_19_LED2_
                                      PB_01_LED0_BLU, PB_13_LED1_BLU, PA_06_LED2_BLU, PA_08_LED3_BLU,
                                      PB_05_LCD_BL};
 
-/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields: 
+/* Control array for all LEDs in system initialized for LedInitialize().  Array values correspond to LedConfigType fields:
      eMode         eRate      u16Count       eCurrentDuty     eActiveState     ePort      LedNumberType */
-static LedConfigType Leds_asLedArray[TOTAL_LEDS] = 
+static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
 {{LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* RED0       */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* RED1       */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* RED2       */
@@ -138,13 +138,13 @@ static LedConfigType Leds_asLedArray[TOTAL_LEDS] =
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTA}, /* BLUE2      */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTA}, /* BLUE3      */
  {LED_PWM_MODE, LED_PWM_100, LED_PWM_100, LED_PWM_DUTY_HIGH, LED_ACTIVE_HIGH, LED_PORTB}, /* LCD_BL     */
-};  
+};
 #endif /* MPGL2_R01 */
 
 #endif /* MPGL2 */
 
 /************ EDIT BOARD-SPECIFIC GPIO DEFINITIONS ABOVE ***************/
- 
+
 
 /***********************************************************************************************************************
 * Function Definitions
@@ -159,7 +159,7 @@ Function: LedOn
 
 Description:
 Turn the specified LED on.  Automatically takes care of the active low vs. active
-high LEDs.  
+high LEDs.
 
 Requires:
   - eLED_ is a valid LED index
@@ -184,10 +184,10 @@ void LedOn(LedNumberType eLED_)
     /* Active low LEDs use CODR to turn on */
     pu32SetAddress = (u32*)(&(AT91C_BASE_PIOA->PIO_CODR) + Leds_asLedArray[eLED_].ePort);
   }
-  
+
   /* Turn on the LED */
   *pu32SetAddress = Led_au32BitPositions[(u8)eLED_];
-  
+
   /* Always set the LED back to LED_NORMAL_MODE mode */
 	Leds_asLedArray[(u8)eLED_].eMode = LED_NORMAL_MODE;
 
@@ -199,7 +199,7 @@ Function: LedOff
 
 Description:
 Turn the specified LED off.  Automatically takes care of the active low vs. active
-high LEDs.  
+high LEDs.
 
 Requires:
   - eLED_ is a valid LED index
@@ -224,13 +224,13 @@ void LedOff(LedNumberType eLED_)
     /* Active low LEDs use SODR to turn off */
     pu32ClearAddress = (u32*)(&(AT91C_BASE_PIOA->PIO_SODR) + Leds_asLedArray[eLED_].ePort);
   }
-  
+
   /* Clear the bit corresponding to eLED_ */
 	*pu32ClearAddress = Led_au32BitPositions[(u8)eLED_];
 
   /* Always set the LED back to LED_NORMAL_MODE mode */
 	Leds_asLedArray[(u8)eLED_].eMode = LED_NORMAL_MODE;
-  
+
 } /* end LedOff() */
 
 
@@ -253,7 +253,7 @@ void LedToggle(LedNumberType eLED_)
   u32 *pu32Address = (u32*)(&(AT91C_BASE_PIOA->PIO_ODSR) + Leds_asLedArray[eLED_].ePort);
 
   *pu32Address ^= Led_au32BitPositions[ (u8)eLED_ ];
-  
+
 } /* end LedToggle() */
 
 
@@ -350,76 +350,76 @@ void LedInitialize(void)
 #endif
 
 #endif /* MPGL2 */
-  
-  /* Turn all LEDs on full, then fade them out over a few seconds */
-  for(u8Index = 20; u8Index > 0; u8Index--)
-  {
-#ifdef STARTUP_SOUND
-    /* Configure Buzzers to provide some audio during start up */
-    PWMAudioSetFrequency(BUZZER1, u32Buzzer1Frequency);
-    PWMAudioOn(BUZZER1);
-#ifdef  EIE1
-    PWMAudioSetFrequency(BUZZER2, u32Buzzer2Frequency);
-    PWMAudioOn(BUZZER2);
-#endif /* EIE1 */
-#endif /* STARTUP_SOUND */
-    
-    /* Spend a little bit of time in each level of intensity */
-    for(u16 j = 20; j > 0; j--)
-    {
-      u32Timer = G_u32SystemTime1ms;
-      while( !IsTimeUp(&u32Timer, 1) );
+#if 0
+      /* Turn all LEDs on full, then fade them out over a few seconds */
+      for(u8Index = 20; u8Index > 0; u8Index--)
+      {
+    #ifdef STARTUP_SOUND
+        /* Configure Buzzers to provide some audio during start up */
+        PWMAudioSetFrequency(BUZZER1, u32Buzzer1Frequency);
+        PWMAudioOn(BUZZER1);
+    #ifdef  EIE1
+        PWMAudioSetFrequency(BUZZER2, u32Buzzer2Frequency);
+        PWMAudioOn(BUZZER2);
+    #endif /* EIE1 */
+    #endif /* STARTUP_SOUND */
+
+        /* Spend a little bit of time in each level of intensity */
+        for(u16 j = 20; j > 0; j--)
+        {
+          u32Timer = G_u32SystemTime1ms;
+          while( !IsTimeUp(&u32Timer, 1) );
+          LedUpdate();
+        }
+        /* Pause for a bit on the first iteration to show the LEDs on for little while */
+        if(u8Index == 20)
+        {
+          while( !IsTimeUp(&u32Timer, 200) );
+        }
+
+        /* Set the LED intensity for the next iteration */
+        for(u8 j = 0; j < TOTAL_LEDS; j++)
+        {
+          Leds_asLedArray[j].eRate = (LedRateType)(u8Index - 1);
+        }
+
+        /* Set the buzzer frequency for the next iteration */
+        u32Buzzer1Frequency -= u32StepSize;
+        u32Buzzer2Frequency += u32StepSize;
+      }
+
+      /* Final update to set last state, hold for a short period */
       LedUpdate();
-    }
-    /* Pause for a bit on the first iteration to show the LEDs on for little while */
-    if(u8Index == 20)
-    {
       while( !IsTimeUp(&u32Timer, 200) );
-    }
-    
-    /* Set the LED intensity for the next iteration */
-    for(u8 j = 0; j < TOTAL_LEDS; j++)
-    {
-      Leds_asLedArray[j].eRate = (LedRateType)(u8Index - 1);
-    }
-    
-    /* Set the buzzer frequency for the next iteration */
-    u32Buzzer1Frequency -= u32StepSize;
-    u32Buzzer2Frequency += u32StepSize;
-  }
 
-  /* Final update to set last state, hold for a short period */
-  LedUpdate();
-  while( !IsTimeUp(&u32Timer, 200) );
-  
-#ifdef STARTUP_SOUND
-  /* Turn off the buzzers */
-  PWMAudioOff(BUZZER1);
-#ifdef  EIE1
-  PWMAudioOff(BUZZER2);
-#endif /* EIE1 */
-  
-#endif /* STARTUP_SOUND */
+    #ifdef STARTUP_SOUND
+      /* Turn off the buzzers */
+      PWMAudioOff(BUZZER1);
+    #ifdef  EIE1
+      PWMAudioOff(BUZZER2);
+    #endif /* EIE1 */
 
- 
+    #endif /* STARTUP_SOUND */
+#endif
+
   /* The discrete LEDs are off and the backlight is on (white) -- this
   is how we will exit the LED init.  But should we set all the LEDs to
-  NORMAL mode?  This would solve the LedToggle() problem described in 
+  NORMAL mode?  This would solve the LedToggle() problem described in
   LedBasic module.  So if the code below is added, then the module
   information must be updated. */
-#if 0 
+#if 0
   for(u8 i = 0; i < TOTAL_LEDS; i++)
   {
     Leds_asLedArray[i].eMode = LED_NORMAL_MODE;
   }
 #endif
 
-#ifdef EIE1
+#if 0
   LedOn(LCD_RED);
   LedOn(LCD_GREEN);
   LedOn(LCD_BLUE);
 #endif
-  
+
 #ifdef MPGL2
   LedOn(LCD_BL);
 #endif
@@ -427,7 +427,7 @@ void LedInitialize(void)
   /* Final setup and report that LED system is ready */
   G_u32ApplicationFlags |= _APPLICATION_FLAGS_LED;
   DebugPrintf(au8LedStartupMsg);
-  
+
 } /* end LedInitialize() */
 
 
@@ -460,13 +460,13 @@ void LedUpdate(void)
       {
         LedOff( (LedNumberType)i );
       }
-      
+
       /* Handle special case of 100% duty cycle */
       else if( Leds_asLedArray[i].eRate == LED_PWM_100 )
       {
         LedOn( (LedNumberType)i );
       }
-  
+
       /* Otherwise, regular PWM: decrement counter; toggle and reload if counter reaches 0 */
       else
       {
@@ -491,9 +491,9 @@ void LedUpdate(void)
 
       /* Set the LED back to PWM mode since LedOff and LedOn set it to normal mode */
      	Leds_asLedArray[(LedNumberType)i].eMode = LED_PWM_MODE;
-      
+
     } /* end if PWM mode */
-    
+
     /* LED is in LED_BLINK_MODE mode */
     else if(Leds_asLedArray[(LedNumberType)i].eMode == LED_BLINK_MODE)
     {

@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
-File: user_app1.c                                                                
+File: user_app1.c
 
 ----------------------------------------------------------------------------------------------------------------------
 To start a new task using this user_app1 as a template:
@@ -16,7 +16,7 @@ To start a new task using this user_app1 as a template:
 ----------------------------------------------------------------------------------------------------------------------
 
 Description:
-This is a user_app1.c file template 
+This is a user_app1.c file template
 
 ------------------------------------------------------------------------------------------------------------------------
 API:
@@ -52,7 +52,11 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 
-
+/* Existing variables */
+extern u32 G_u32AntApiCurrentDataTimeStamp;
+extern AntApplicationMessageType G_eAntApiCurrentMessageClass;
+extern u8 G_au8AntApiCurrentMessageBytes[ANT_APPLICATION_MESSAGE_BYTES];
+extern AntExtendedDataType G_sAntApiCurrentMessageExtData;
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp1_" and be declared as static.
@@ -83,15 +87,43 @@ Requires:
   -
 
 Promises:
-  - 
+  -
 */
 void UserApp1Initialize(void)
 {
- 
+AntAssignChannelInfoType AntSetupData;
+AntSetupData.AntChannel = ANT_CHANNEL_SCANNING;
+AntSetupData.AntChannelPeriodHi = 0;
+AntSetupData.AntChannelPeriodLo = 0;
+AntSetupData.AntChannelType = CHANNEL_TYPE_SLAVE;
+AntSetupData.AntDeviceIdHi = 0;
+AntSetupData.AntDeviceIdLo = 0;
+AntSetupData.AntDeviceType = 0;
+AntSetupData.AntFrequency = 50;
+AntSetupData.AntNetwork = ANT_NETWORK_DEFAULT;
+for(u8 i =0; i< ANT_NETWORK_NUMBER_BYTES; i++)
+{
+    AntSetupData.AntNetworkKey[i] = ANT_DEFAULT_NETWORK_KEY;
+}
+
+AntSetupData.AntTransmissionType = 0;
+AntSetupData.AntTxPower = RADIO_TX_POWER_4DBM;
+
   /* If good initialization, set state to Idle */
-  if( 1 )
+  if( AntAssignChannel(&AntSetupData) )
   {
     UserApp1_StateMachine = UserApp1SM_Idle;
+    LedPWM(0,1);
+    LedPWM(1,1);
+    LedPWM(2,1);
+    LedPWM(3,1);
+    LedPWM(4,1);
+    LedPWM(5,1);
+    LedPWM(6,1);
+    LedPWM(7,1);
+    LedPWM(8,1);
+    LedPWM(9,1);
+    LedPWM(10,1);
   }
   else
   {
@@ -101,7 +133,7 @@ void UserApp1Initialize(void)
 
 } /* end UserApp1Initialize() */
 
-  
+
 /*----------------------------------------------------------------------------------------------------------------------
 Function UserApp1RunActiveState()
 
@@ -136,15 +168,46 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+  static u8 count = 0;
+  static bool channel_open = FALSE;
+  if(count < 200)
+  {
+    count++;
+    return;
+  }
+  if(!channel_open)
+  {
+    if(AntOpenScanningChannel())
+    {
+      channel_open = TRUE;
+    }
+  }
+  if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) != ANT_OPEN)
+  {
+  channel_open = FALSE;
+  }
+  if( channel_open )
+  {
+    if( AntReadAppMessageBuffer() && G_eAntApiCurrentMessageClass == ANT_DATA )
+      {
+        for(u8 i=0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
+        {
+          if( G_au8AntApiCurrentMessageBytes[i] > 0 )
+          {
+          LedPWM(i,LED_PWM_50);
+          }
+        }
+    }
 
+  }
 } /* end UserApp1SM_Idle() */
-    
+
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
-static void UserApp1SM_Error(void)          
+static void UserApp1SM_Error(void)
 {
-  
+
 } /* end UserApp1SM_Error() */
 
 
