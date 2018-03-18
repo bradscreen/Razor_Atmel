@@ -64,6 +64,11 @@ Variable names shall start with "UserApp1_" and be declared as static.
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 
+static LedRateType current_led_rates[ANT_APPLICATION_MESSAGE_BYTES];
+static u8 led_delays[ANT_APPLICATION_MESSAGE_BYTES];
+
+#define LED_MAX_BRIGHTNESS LED_PWM_50
+#define LED_FADE_DELAY_CYCLES 2
 
 /**********************************************************************************************************************
 Function Definitions
@@ -105,9 +110,14 @@ for(u8 i =0; i< ANT_NETWORK_NUMBER_BYTES; i++)
 {
     AntSetupData.AntNetworkKey[i] = ANT_DEFAULT_NETWORK_KEY;
 }
-
 AntSetupData.AntTransmissionType = 0;
 AntSetupData.AntTxPower = RADIO_TX_POWER_4DBM;
+
+for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
+  {
+  current_led_rates[i] = LED_PWM_5;
+  led_delays[i] = LED_FADE_DELAY_CYCLES;
+  }
 
   /* If good initialization, set state to Idle */
   if( AntAssignChannel(&AntSetupData) )
@@ -121,9 +131,9 @@ AntSetupData.AntTxPower = RADIO_TX_POWER_4DBM;
     LedPWM(5,1);
     LedPWM(6,1);
     LedPWM(7,1);
-    LedPWM(8,1);
-    LedPWM(9,1);
-    LedPWM(10,1);
+    LedPWM(8,3);
+    LedPWM(9,3);
+    LedPWM(10,3);
   }
   else
   {
@@ -170,6 +180,7 @@ static void UserApp1SM_Idle(void)
 {
   static u8 count = 0;
   static bool channel_open = FALSE;
+
   if(count < 200)
   {
     count++;
@@ -190,15 +201,30 @@ static void UserApp1SM_Idle(void)
   {
     if( AntReadAppMessageBuffer() && G_eAntApiCurrentMessageClass == ANT_DATA )
       {
-        for(u8 i=0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
+        for(u8 i = 0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
         {
           if( G_au8AntApiCurrentMessageBytes[i] > 0 )
           {
-          LedPWM(i,LED_PWM_50);
+            if(current_led_rates[i] != LED_MAX_BRIGHTNESS)
+            {
+            current_led_rates[i] = LED_MAX_BRIGHTNESS;
+            LedPWM(i, current_led_rates[i]);
+            }
+
           }
+          else
+          {
+            if(--led_delays[i] == 0 && current_led_rates[i] != LED_PWM_0)
+            {
+              current_led_rates[i]--;
+              led_delays[i] = LED_FADE_DELAY_CYCLES;
+              LedPWM(i, current_led_rates[i]);
+            }
+          }
+
+
         }
     }
-
   }
 } /* end UserApp1SM_Idle() */
 
