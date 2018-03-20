@@ -35,6 +35,7 @@ Runs current task state.  Should only be called once in main loop.
 **********************************************************************************************************************/
 
 #include "configuration.h"
+#include "stdio.h"
 
 /***********************************************************************************************************************
 Global variable definitions with scope across entire project.
@@ -66,9 +67,10 @@ static fnCode_type UserApp1_StateMachine;            /* The state machine functi
 
 static LedRateType current_led_rates[ANT_APPLICATION_MESSAGE_BYTES];
 static u8 led_delays[ANT_APPLICATION_MESSAGE_BYTES];
+static u8 ant_frequency = 50;
 
 #define LED_MAX_BRIGHTNESS LED_PWM_100
-#define LED_FADE_DELAY_CYCLES 1
+#define LED_FADE_DELAY_CYCLES 50
 
 /**********************************************************************************************************************
 Function Definitions
@@ -96,6 +98,7 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LCDCommand(LCD_CLEAR_CMD);
 AntAssignChannelInfoType AntSetupData;
 AntSetupData.AntChannel = ANT_CHANNEL_SCANNING;
 AntSetupData.AntChannelPeriodHi = 0;
@@ -104,7 +107,7 @@ AntSetupData.AntChannelType = CHANNEL_TYPE_SLAVE;
 AntSetupData.AntDeviceIdHi = 0;
 AntSetupData.AntDeviceIdLo = 0;
 AntSetupData.AntDeviceType = 0;
-AntSetupData.AntFrequency = 50;
+AntSetupData.AntFrequency = ant_frequency;
 AntSetupData.AntNetwork = ANT_NETWORK_DEFAULT;
 for(u8 i =0; i< ANT_NETWORK_NUMBER_BYTES; i++)
 {
@@ -122,6 +125,9 @@ for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
   /* If good initialization, set state to Idle */
   if( AntAssignChannel(&AntSetupData) )
   {
+    u8 msg[19];
+    sprintf(msg, "Scan frequency: %d", ant_frequency);
+      LCDMessage(LINE1_START_ADDR, msg);
     UserApp1_StateMachine = UserApp1SM_Idle;
     LedPWM(0,1);
     LedPWM(1,1);
@@ -181,6 +187,7 @@ static void UserApp1SM_Idle(void)
   static u8 count = 0;
   static bool slow = TRUE;
   static bool channel_open = FALSE;
+  static u16 no_data_ticks;
   u8 light_intensity;
   LedRateType new_rate;
 
@@ -254,6 +261,24 @@ static void UserApp1SM_Idle(void)
 
       }
     }
+  else  // no data
+  {
+    if(++no_data_ticks >= 3000)
+    {
+      no_data_ticks = 0;
+    // slowly fade
+    for(u8 i = 0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
+    {
+    if(/*--led_delays[i] == 0 &&*/
+         current_led_rates[i] != LED_PWM_0)
+      {
+        current_led_rates[i]--;
+        led_delays[i] = LED_FADE_DELAY_CYCLES;
+        LedPWM(i, current_led_rates[i]);
+      }
+    }
+    }
+  }
 } /* end UserApp1SM_Idle() */
 
 
@@ -261,7 +286,7 @@ static void UserApp1SM_Idle(void)
 /* Handle an error */
 static void UserApp1SM_Error(void)
 {
-
+  LCDMessage(LINE1_START_ADDR, "Channel assign failed");
 } /* end UserApp1SM_Error() */
 
 
