@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
-File: user_app1.h                                                                
+File: user_app1.h
 
 ----------------------------------------------------------------------------------------------------------------------
 To start a new task using this user_app1 as a template:
@@ -54,9 +54,9 @@ void UserApp1RunActiveState(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_Idle(void);    
-
-static void UserApp1SM_Error(void);         
+static void UserApp1SM_Idle(void);
+static void UserApp1SM_Switch(void);
+static void UserApp1SM_Error(void);
 
 
 #endif /* __USER_APP1_H */

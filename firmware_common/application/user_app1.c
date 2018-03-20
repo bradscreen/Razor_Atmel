@@ -129,17 +129,6 @@ for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
     sprintf(msg, "Scan frequency: %d", ant_frequency);
       LCDMessage(LINE1_START_ADDR, msg);
     UserApp1_StateMachine = UserApp1SM_Idle;
-    LedPWM(0,1);
-    LedPWM(1,1);
-    LedPWM(2,1);
-    LedPWM(3,1);
-    LedPWM(4,1);
-    LedPWM(5,1);
-    LedPWM(6,1);
-    LedPWM(7,1);
-    LedPWM(8,3);
-    LedPWM(9,3);
-    LedPWM(10,3);
   }
   else
   {
@@ -179,7 +168,39 @@ void UserApp1RunActiveState(void)
 /**********************************************************************************************************************
 State Machine Function Definitions
 **********************************************************************************************************************/
+static void UserApp1SM_Switch(void)
+{
+  static u8 count = 100;
 
+  if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_OPEN)
+    {
+//      // wait before retrying command
+//  if(count < 100)
+//  {
+//    count++;
+//    return;
+//  }
+//      AntCloseChannelNumber(0);
+//   count = 0;
+//      return;
+//    }
+//    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_CLOSED)
+//    {
+//
+//       if(count < 100)
+//  {
+//    count++;
+//    return;
+//  }
+      AntUnassignChannelNumber(0);
+      count = 0;
+      return;
+    }
+    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_UNCONFIGURED)
+    {
+       UserApp1_StateMachine = UserApp1Initialize;
+    }
+}
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
@@ -188,8 +209,54 @@ static void UserApp1SM_Idle(void)
   static bool slow = TRUE;
   static bool channel_open = FALSE;
   static u16 no_data_ticks;
+  static u16 switch_counter = 0;
   u8 light_intensity;
   LedRateType new_rate;
+
+  // button3 should increase freq
+  if(WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    if(ant_frequency < 99)
+    {
+      // increment and print new freq, start counter to switch the channel
+    ant_frequency++;
+    switch_counter=1;
+    LCDCommand(LCD_CLEAR_CMD);
+    u8 msg[19];
+    sprintf(msg, "Scan frequency: %d", ant_frequency);
+    LCDMessage(LINE1_START_ADDR, msg);
+    }
+  }
+     // button2 should decrease freq
+     if(WasButtonPressed(BUTTON2))
+      {
+        ButtonAcknowledge(BUTTON2);
+        if(ant_frequency > 0)
+        {
+          // decrement and print new freq, start counter to switch the channel
+        ant_frequency--;
+        switch_counter=1;
+        LCDCommand(LCD_CLEAR_CMD);
+        u8 msg[19];
+        sprintf(msg, "Scan frequency: %d", ant_frequency);
+        LCDMessage(LINE1_START_ADDR, msg);
+        }
+      }
+
+    // if we are going to switch channels soon:
+    if(switch_counter > 0)
+    {
+        switch_counter++;
+        // wait for a second and then reset variables, move states
+        if(switch_counter >=1000)
+        {
+          switch_counter=0;
+        UserApp1_StateMachine = UserApp1SM_Switch;
+        count = 0;
+        channel_open = FALSE;
+        }
+      }
 
 #if SLOW
   // try running the state half as often
