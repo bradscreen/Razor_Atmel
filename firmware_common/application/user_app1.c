@@ -67,8 +67,8 @@ static fnCode_type UserApp1_StateMachine;            /* The state machine functi
 static LedRateType current_led_rates[ANT_APPLICATION_MESSAGE_BYTES];
 static u8 led_delays[ANT_APPLICATION_MESSAGE_BYTES];
 
-#define LED_MAX_BRIGHTNESS LED_PWM_50
-#define LED_FADE_DELAY_CYCLES 2
+#define LED_MAX_BRIGHTNESS LED_PWM_100
+#define LED_FADE_DELAY_CYCLES 1
 
 /**********************************************************************************************************************
 Function Definitions
@@ -179,13 +179,29 @@ State Machine Function Definitions
 static void UserApp1SM_Idle(void)
 {
   static u8 count = 0;
+  static bool slow = TRUE;
   static bool channel_open = FALSE;
+  u8 light_intensity;
+  LedRateType new_rate;
 
-  if(count < 200)
+#if SLOW
+  // try running the state half as often
+  if(slow)
+  {
+    slow = FALSE;
+    return;
+  }
+  slow = TRUE;
+#endif
+
+  // wait before opening channel
+  if(count < 100)
   {
     count++;
     return;
   }
+
+  // open and check channel status
   if(!channel_open)
   {
     if(AntOpenScanningChannel())
@@ -196,36 +212,48 @@ static void UserApp1SM_Idle(void)
   if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) != ANT_OPEN)
   {
   channel_open = FALSE;
+  return;
   }
-  if( channel_open )
-  {
-    if( AntReadAppMessageBuffer() && G_eAntApiCurrentMessageClass == ANT_DATA )
+
+  // handle incoming data
+  if( AntReadAppMessageBuffer() && G_eAntApiCurrentMessageClass == ANT_DATA )
+    {
+      // for every message byte / LED:
+      for(u8 i = 0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
       {
-        for(u8 i = 0; i< ANT_APPLICATION_MESSAGE_BYTES; i++)
+        // convert the byte into an LED brightness bin
+        light_intensity = (u8)( G_au8AntApiCurrentMessageBytes[i] / LED_PWM_PERIOD );
+        for(u8 j = 0; j < LED_PWM_PERIOD; j++)
         {
-          if( G_au8AntApiCurrentMessageBytes[i] > 0 )
+          if( light_intensity <= j )
           {
-            if(current_led_rates[i] != LED_MAX_BRIGHTNESS)
-            {
-            current_led_rates[i] = LED_MAX_BRIGHTNESS;
-            LedPWM(i, current_led_rates[i]);
-            }
-
+            new_rate = light_intensity;
+            break;
           }
-          else
-          {
-            if(--led_delays[i] == 0 && current_led_rates[i] != LED_PWM_0)
-            {
-              current_led_rates[i]--;
-              led_delays[i] = LED_FADE_DELAY_CYCLES;
-              LedPWM(i, current_led_rates[i]);
-            }
-          }
-
-
         }
+        // if there was data in the byte, set the brightness
+        if( G_au8AntApiCurrentMessageBytes[i] > 0 )
+        {
+          if( current_led_rates[i] != new_rate )
+          {
+          current_led_rates[i] = new_rate;
+          LedPWM(i, current_led_rates[i]);
+          }
+        }
+
+        else    // fade out the LEDs with no corresponding data
+        {
+          if(/*--led_delays[i] == 0 && */
+             current_led_rates[i] != LED_PWM_0)
+          {
+            current_led_rates[i]--;
+            led_delays[i] = LED_FADE_DELAY_CYCLES;
+            LedPWM(i, current_led_rates[i]);
+          }
+        }
+
+      }
     }
-  }
 } /* end UserApp1SM_Idle() */
 
 
