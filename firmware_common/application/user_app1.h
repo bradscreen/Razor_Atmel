@@ -54,8 +54,8 @@ void UserApp1RunActiveState(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_Idle(void);
-static void UserApp1SM_Switch(void);
+static void UserApp1SM_Scan(void);
+static void UserApp1SM_Setup(void);
 static void UserApp1SM_Error(void);
 
 

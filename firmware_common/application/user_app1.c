@@ -72,6 +72,14 @@ static u8 ant_frequency = 50;
 #define LED_MAX_BRIGHTNESS LED_PWM_100
 #define LED_FADE_DELAY_CYCLES 50
 
+static AntAssignChannelInfoType AntSetupData;
+  static u8 count = 0;
+  static bool slow = TRUE;
+  static bool channel_open = FALSE;
+  static u16 no_data_ticks;
+  static u16 switch_counter = 0;
+  static u8 msg[19];
+
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -99,7 +107,7 @@ Promises:
 void UserApp1Initialize(void)
 {
   LCDCommand(LCD_CLEAR_CMD);
-AntAssignChannelInfoType AntSetupData;
+
 AntSetupData.AntChannel = ANT_CHANNEL_SCANNING;
 AntSetupData.AntChannelPeriodHi = 0;
 AntSetupData.AntChannelPeriodLo = 0;
@@ -107,7 +115,7 @@ AntSetupData.AntChannelType = CHANNEL_TYPE_SLAVE;
 AntSetupData.AntDeviceIdHi = 0;
 AntSetupData.AntDeviceIdLo = 0;
 AntSetupData.AntDeviceType = 0;
-AntSetupData.AntFrequency = ant_frequency;
+//AntSetupData.AntFrequency = ant_frequency;
 AntSetupData.AntNetwork = ANT_NETWORK_DEFAULT;
 for(u8 i =0; i< ANT_NETWORK_NUMBER_BYTES; i++)
 {
@@ -122,19 +130,24 @@ for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
   led_delays[i] = LED_FADE_DELAY_CYCLES;
   }
 
-  /* If good initialization, set state to Idle */
-  if( AntAssignChannel(&AntSetupData) )
-  {
-    u8 msg[19];
-    sprintf(msg, "Scan frequency: %d", ant_frequency);
-      LCDMessage(LINE1_START_ADDR, msg);
-    UserApp1_StateMachine = UserApp1SM_Idle;
-  }
-  else
-  {
-    /* The task isn't properly initialized, so shut it down and don't run */
-    UserApp1_StateMachine = UserApp1SM_Error;
-  }
+UserApp1_StateMachine = UserApp1SM_Setup;
+
+snprintf( msg, 19, "Scan frequency:   " );
+LCDMessage( LINE1_START_ADDR, msg );
+
+//  /* If good initialization, set state to Idle */
+//  if( AntAssignChannel(&AntSetupData) )
+//  {
+//    u8 msg[19];
+//    sprintf(msg, "Scan frequency: %d", ant_frequency);
+//      LCDMessage(LINE1_START_ADDR, msg);
+//    UserApp1_StateMachine = UserApp1SM_Scan;
+//  }
+//  else
+//  {
+//    /* The task isn't properly initialized, so shut it down and don't run */
+//    UserApp1_StateMachine = UserApp1SM_Error;
+//  }
 
 } /* end UserApp1Initialize() */
 
@@ -168,50 +181,23 @@ void UserApp1RunActiveState(void)
 /**********************************************************************************************************************
 State Machine Function Definitions
 **********************************************************************************************************************/
-static void UserApp1SM_Switch(void)
+static void UserApp1SM_Setup(void)
 {
-  static u8 count = 100;
-
-  if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_OPEN)
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    AntSetupData.AntFrequency = ant_frequency;
+    snprintf( msg, 19, "Scan frequency: %d", ant_frequency);
+    LCDMessage(LINE1_START_ADDR, msg);
+    if( AntAssignChannel(&AntSetupData) )
     {
-//      // wait before retrying command
-//  if(count < 100)
-//  {
-//    count++;
-//    return;
-//  }
-//      AntCloseChannelNumber(0);
-//   count = 0;
-//      return;
-//    }
-//    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_CLOSED)
-//    {
-//
-//       if(count < 100)
-//  {
-//    count++;
-//    return;
-//  }
-      AntUnassignChannelNumber(0);
-      count = 0;
-      return;
+      UserApp1_StateMachine = UserApp1SM_Scan;
     }
-    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_UNCONFIGURED)
+    else
     {
-       UserApp1_StateMachine = UserApp1Initialize;
+      UserApp1_StateMachine = UserApp1SM_Error;
     }
-}
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Wait for ??? */
-static void UserApp1SM_Idle(void)
-{
-  static u8 count = 0;
-  static bool slow = TRUE;
-  static bool channel_open = FALSE;
-  static u16 no_data_ticks;
-  static u16 switch_counter = 0;
-  u8 light_intensity;
-  LedRateType new_rate;
+  }
 
   // button3 should increase freq
   if(WasButtonPressed(BUTTON3))
@@ -221,10 +207,9 @@ static void UserApp1SM_Idle(void)
     {
       // increment and print new freq, start counter to switch the channel
     ant_frequency++;
-    switch_counter=1;
-    LCDCommand(LCD_CLEAR_CMD);
-    u8 msg[19];
-    sprintf(msg, "Scan frequency: %d", ant_frequency);
+    //switch_counter=1;
+    //LCDCommand(LCD_CLEAR_CMD);
+    snprintf( msg, 19,"Scan frequency: %d", ant_frequency);
     LCDMessage(LINE1_START_ADDR, msg);
     }
   }
@@ -236,27 +221,64 @@ static void UserApp1SM_Idle(void)
         {
           // decrement and print new freq, start counter to switch the channel
         ant_frequency--;
-        switch_counter=1;
-        LCDCommand(LCD_CLEAR_CMD);
-        u8 msg[19];
-        sprintf(msg, "Scan frequency: %d", ant_frequency);
+        //switch_counter=1;
+        //LCDCommand(LCD_CLEAR_CMD);
+        snprintf( msg, 19, "Scan frequency: %d", ant_frequency);
         LCDMessage(LINE1_START_ADDR, msg);
         }
       }
 
-    // if we are going to switch channels soon:
-    if(switch_counter > 0)
-    {
-        switch_counter++;
-        // wait for a second and then reset variables, move states
-        if(switch_counter >=1000)
-        {
-          switch_counter=0;
-        UserApp1_StateMachine = UserApp1SM_Switch;
-        count = 0;
-        channel_open = FALSE;
-        }
-      }
+//    // if we are going to switch channels soon:
+//    if(switch_counter > 0)
+//    {
+//        switch_counter++;
+//        // wait for a second and then reset variables, move states
+//        if(switch_counter >=1000)
+//        {
+//          switch_counter=0;
+//        UserApp1_StateMachine = UserApp1SM_Setup;
+//        count = 0;
+//        channel_open = FALSE;
+//        }
+//      }
+
+//  static u8 count = 100;
+//
+//  if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_OPEN)
+//    {
+////      // wait before retrying command
+////  if(count < 100)
+////  {
+////    count++;
+////    return;
+////  }
+////      AntCloseChannelNumber(0);
+////   count = 0;
+////      return;
+////    }
+////    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_CLOSED)
+////    {
+////
+////       if(count < 100)
+////  {
+////    count++;
+////    return;
+////  }
+//      AntUnassignChannelNumber(0);
+//      count = 0;
+//      return;
+//    }
+//    else if(AntRadioStatusChannel(ANT_CHANNEL_SCANNING) == ANT_UNCONFIGURED)
+//    {
+//       UserApp1_StateMachine = UserApp1Initialize;
+//    }
+}
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Wait for ??? */
+static void UserApp1SM_Scan(void)
+{
+    u8 light_intensity;
+  LedRateType new_rate;
 
 #if SLOW
   // try running the state half as often
@@ -346,7 +368,7 @@ static void UserApp1SM_Idle(void)
     }
     }
   }
-} /* end UserApp1SM_Idle() */
+} /* end UserApp1SM_Scan() */
 
 
 /*-------------------------------------------------------------------------------------------------------------------*/
